@@ -110,7 +110,7 @@ $(function () {
             error_password = false;
         }
         else {
-            $('#pwd').next().html('密码是6到15位字母、数字，还可包含@!#$%^&*字符')
+            $('#pwd').next().html('密码是6到15位字母、数字，还可包含@!#$%^&*字符');
             $('#pwd').next().show();
             error_password = true;
         }

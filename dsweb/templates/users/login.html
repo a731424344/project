@@ -7,7 +7,73 @@
 
 {% endblock jq %}
 {% block head %}
-    <script type="text/javascript" src="/static/js/yzm.js"></script>
+    <script >
+    $(function () {
+    name_ok = true;
+    pwd_ok = true;
+    $('#change').css({'cursor': 'pointer'}).click(function () {
+        $('#yzm_img').prop('src', $('#yzm_img').prop('src') + 1);
+    });
+
+
+    $('.name_input').keyup(function () {
+
+        if ($(this).val() == "") {
+            $(this).next().html('用户名不能为空').show();
+
+        }
+        else {
+            $(this).next().hide()
+
+        }
+    });
+
+    $('.name_input').blur(function () {
+        var user_name = $('.name_input').val();
+
+        if (user_name.length < 5 || user_name.length > 15) {
+
+            $(this).next().html('请输入5-15位英文或数字').show();
+            name_ok = false;
+        }
+        else {
+            name_ok = true;
+            $(this).next().hide()
+        }
+
+    });
+    $('.pass_input').blur(function () {
+
+        var user_pwd = $('.pass_input').val();
+        if (user_pwd.length < 6 || user_pwd.length > 15) {
+            $(this).next().html('密码最少6位,最多15位').show();
+            pwd_ok = false;
+        }
+        else {
+            pwd_ok = true
+            $(this).next().hide()
+
+        }
+    });
+    $('#reg_form').submit(function () {
+        $('.name_input').blur();
+        $('.pass_input').blur();
+        return name_ok && pwd_ok;
+    });
+    if ('{{yzm_error}}' == '1') {
+        $('.user_error').html('验证码错误').show();
+        yzm_error = '0'
+
+
+    }
+    if ('{{name_error}}' == '1' || '{{pwd_error}}' == '1') {
+        $('.user_error').html('用户名错误或密码').show();
+        name_error = '0'
+
+    }
+
+});
+    </script>
 
 {% endblock head %}
 
@@ -15,7 +81,7 @@
 {% block body %}
 
     <div class="login_top clearfix">
-        <a href="index.html" class="login_logo"><img src="/static/images/logo02.png"></a>
+        <a href="/" class="login_logo"><img src="/static/images/logo02.png"></a>
     </div>
 
     <div class="login_form_bg">
@@ -25,26 +91,26 @@
             <div class="login_form fr">
                 <div class="login_title clearfix">
                     <h1>用户登录</h1>
-                    <a href="#">立即注册</a>
+                    <a href="/register/">立即注册</a>
                 </div>
                 <div class="form_input">
-                    <form>
+                    <form action="/login_handle/" method="post" id="reg_form">
                         {% csrf_token %}
-                        <input type="text" name="username" class="name_input" placeholder="请输入用户名">
+                        <input type="text" name="user_name" value="{{ uname }}" class="name_input" placeholder="请输入用户名">
                         <div class="user_error">输入错误</div>
-                        <input type="password" name="pwd" class="pass_input" placeholder="请输入密码">
+                        <input type="password" name="user_pwd" class="pass_input" value="{{ upwd }}" placeholder="请输入密码">
                         <div class="pwd_error">输入错误</div>
                         <div class="more_input clearfix">
-                            <input type="checkbox" name="">
+                            <input type="checkbox" name="rember" value="1" checked="checked">
                             <label>记住用户名</label>
-                            <a href="#"></a>
+                            <a href="/change_pwd/">忘记密码</a>
                         </div>
                         <div class="yzm_div">
                             <input type="text" class="yzm" name="yzm">
                             <img src="/verify/?1" alt="" class="yam_img" id="yzm_img">
                             <span class="change_yzm" id="change">看不清换一个</span>
                         </div>
-                        <input type="submit" name="" value="登录" class="input_submit" id="reg_form">
+                        <input type="submit"  value="登录" class="input_submit">
                     </form>
 
                 </div>

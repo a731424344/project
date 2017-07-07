@@ -5,13 +5,17 @@ from PIL import Image, ImageDraw, ImageFont
 from models import *
 from redis import StrictRedis
 from hashlib import sha1
+import datetime
+
+
 def register(request):
-    return render(request, 'users/register.html',{'title':'注册'})
+    return render(request, 'users/register.html', {'title': '注册', 'top': '0'})
 
 
 def login(request):
+    uname = request.COOKIES.get('uname', '')
 
-    return render(request, 'users/login.html',{'title':'登录'})
+    return render(request, 'users/login.html', {'title': '登录', 'uname': uname, 'top': '0'})
 
 
 def verify_code(request):
@@ -50,6 +54,8 @@ def verify_code(request):
     del draw
     # 存入session，用于做进一步验证
     request.session['verifycode'] = rand_str
+
+    # print request.session['verifycode']
     # 内存文件操作
     import cStringIO
     buf = cStringIO.StringIO()
@@ -69,16 +75,120 @@ def info_handle(request):
     upwd = s1.hexdigest()
 
     user_info = userinfo()
-    user_info.user_name=user_name
+    user_info.user_name = user_name
     user_info.user_pwd = upwd
     user_info.user_email = user_email
     user_info.save()
 
-    return HttpResponse('ok')
+    return render(request, 'users/success_register.html')
 
 
 def re_name(request):
     user_name = request.GET.get('user_name')
-    x = userinfo.objects.filter(user_name = user_name).count()
+    x = userinfo.objects.filter(user_name=user_name).count()
     return JsonResponse({'valid': x})
 
+
+def login_handle(request):
+    post = request.POST
+    log_name = post.get('user_name')
+    login_pwd = post.get('user_pwd')
+    log_yzm = post.get('yzm')
+    yzm = request.session['verifycode']
+    log_rember = post.get('rember')
+    # rember = post.get('rember')
+    s1 = sha1()
+    s1.update(login_pwd)
+    log_pwd = s1.hexdigest()
+    sr = StrictRedis()
+    redis_pwd = sr.get(log_name)
+
+    context = {'title': '登录', 'uname': log_name, 'upwd': login_pwd, 'top': '0'}
+    user_name = userinfo.objects.filter(user_name=log_name)
+    if yzm == log_yzm:
+        if redis_pwd is None:
+            print ('xxx')
+            if len(user_name) == 0:
+                context['name_error'] = '1'
+                return render(request, 'users/login.html', context)
+
+            else:
+                if user_name[0].user_pwd == log_pwd:
+                    sr.set(log_name, log_pwd)
+                    request.session['uid'] = user_name[0].id
+                    response = redirect('/center/')
+                    if log_rember == '1':
+
+                        response.set_cookie('uname', log_name,
+                                            expires=datetime.datetime.now() + datetime.timedelta(days=7))
+
+                    else:
+                        response.set_cookie('uname', '', max_age=-1)
+                    return response
+                else:
+                    context['pwd_error'] = '1'
+                    return render(request, 'users/login.html', context)
+        else:
+            if log_pwd == redis_pwd:
+                request.session['uid'] = user_name[0].id
+                response = redirect('/center/')
+                if log_rember == '1':
+
+                    response.set_cookie('uname', log_name, expires=datetime.datetime.now() + datetime.timedelta(days=7))
+                else:
+                    response.set_cookie('uname', '', max_age=-1)
+
+                return response
+            else:
+                context['pwd_error'] = '1'
+                return render(request, 'users/login.html', context)
+
+    else:
+        context['yzm_error'] = '1'
+        return render(request, 'users/login.html', context)
+
+
+def change_pwd(request):
+    context = {'title': '修改密码'}
+    return render(request, 'users/change_pwd.html', context)
+
+
+def newpwd_handle(request):
+    post = request.POST
+    uname = post.get('uname')
+    uemail = post.get('uemail')
+    upwd = post.get('upwd')
+    user = userinfo.objects.filter(user_name=uname)
+    context = {'uname': uname, 'uemail': uemail, 'upwd': upwd}
+    if len(user) == 0:
+        context['name_error'] = '1'
+        return render(request, 'users/change_pwd.html', context)
+    else:
+        if user[0].user_email == uemail:
+            s1 = sha1()
+            s1.update(upwd)
+            pwd_sha1 = s1.hexdigest()
+            user[0].user_pwd = pwd_sha1
+            user[0].save()
+            sr = StrictRedis()
+            sr.set(uname, pwd_sha1)
+            return render(request, 'users/change_succ.html')
+        else:
+            context['email_error'] = '1'
+            return render(request, 'users/change_pwd.html', context)
+
+
+def center(request):
+    user = userinfo.objects.get(pk=request.session['uid'])
+    context = {'title': '用户中心', 'user': user}
+    return render(request, 'users/user_center_info.html', context)
+
+
+def order(request):
+    context = {'title': '用户订单'}
+    return render(request, 'users/user_center_order.html', context)
+
+
+def site(request):
+    context = {'title': '用户订单'}
+    return render(request, 'users/user_center_site.html', context)

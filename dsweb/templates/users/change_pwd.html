@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ title }}</title>
+    <script src="/static/js/jquery-1.12.4.min.js"></script>
+    <style>
+        span {
+            color: orangered;
+        }
+    </style>
+    <script>
+        $(function () {
+            var email_ok = false;
+            var pwd_ok = false;
+            var cpwd_ok = false;
+            var name_ok = false;
+            $('#username').blur(function () {
+                name = $('#username').val()
+                if(name.length < 5 || name.length>15 )
+                {
+                    name_ok = false;
+                    $('#error_name').html('请输入正确的用户名').show();
+                }
+                else {
+                    $('#error_name').hide();
+                    name_ok = true;
+                }
+            });
+
+            $('#email').blur(function () {
+                email = $('#email').val();
+                reg = /^[a-z0-9][\w\.\-]*@[a-z0-9\-]+(\.[a-z]{2,5}){1,2}$/;
+                if (email == '') {
+                    $('#error_email').html('邮箱不能为空').show();
+                    email_ok = false;
+                }
+                else if (reg.test(email)) {
+                    $('#error_email').hide();
+                    email_ok = true;
+                }
+                else {
+                    email_ok = false;
+                    $('#error_email').html('邮箱格式不正确').show();
+
+                }
+            });
+
+            $('#new_pwd').blur(function () {
+                var newpwd = $('#new_pwd').val();
+
+                var reg = /^[\w@!#$%&^*]{6,15}$/;
+
+                if (newpwd == '') {
+                    pwd_ok = false;
+                    $('#error_pwd').html('密码不能为空').show();
+                }
+                else if (reg.test(newpwd)) {
+                    pwd_ok = true;
+                    $('#error_pwd').hide()
+                }
+                else {
+                    pwd_ok = false;
+                    $('#error_pwd').html('密码格式不正确,6-15位').show();
+
+
+                }
+
+            });
+            $('#cnew_pwd').blur(function () {
+                var cnew_pwd = $('#cnew_pwd').val();
+                var new_pwd = $('#new_pwd').val();
+                if (cnew_pwd == new_pwd) {
+                    $('#error_pwd2').hide();
+                    cpwd_ok = true;
+                }
+                else {
+                    $('#error_pwd2').html('新密码与原密码不一致').show();
+                    cpwd_ok = false;
+                }
+            });
+
+
+            $('#change_newpwd').submit(function () {
+                $('#email').blur();
+                $('#new_pwd').blur();
+                $('#cnew_pwd').blur();
+                return pwd_ok == true && cpwd_ok == true && email_ok == true && name_ok==true;
+
+            });
+            if('{{ name_error }}' == '1'){
+                $('#error_name').html('用户名不存在').show();
+            }
+            if ('{{ email_error }}' == '1'){
+                $('#error_email').html('邮箱错误').show();
+            }
+        });
+
+    </script>
+</head>
+<body>
+<form action="/newpwd_handle/" method="post" id="change_newpwd">
+    {% csrf_token %}
+    <div>
+        用户名： &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        <input type="text" name="uname" id="username" value="{{ uname }}">
+        <span id="error_name"></span>
+    </div>
+    <div>
+        邮箱： &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        <input type="text" name="uemail" id="email" value="{{ uemail }}">
+        <span id="error_email"></span>
+
+    </div>
+    <div>
+        新密码：&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        <input type="password" name="upwd" id="new_pwd" value="{{ upwd }}">
+        <span id="error_pwd"></span>
+    </div>
+    <div>
+        确认新密码： <input type="password" id="cnew_pwd">
+        <span id="error_pwd2"></span>
+    </div>
+    <input type="submit" id="submit_input" value="提交">
+    <input type="reset" value="取消">
+
+
+</form>
+</body>
+</html>
