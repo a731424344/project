@@ -1,0 +1,268 @@
+{% extends 'basegoods.html' %}
+
+{% block jq %}
+    <script type="text/javascript" src="/static/js/jquery-1.12.4.min.js"></script>
+    <script type="text/javascript">
+        $(function () {
+            $('#add_cart').click(function () {
+                $.get('/islogin/', function (data) {
+                    if (data.islogin) {
+                        gid = $('#gid').val();
+                        count = $('.num_show').val();
+                        $.get('/cart/add/', {'goodsid': gid, 'count': count}, function (data) {
+                            if (data.is_add == '1') {
+                                var $add_x = $('#add_cart').offset().top;
+                                var $add_y = $('#add_cart').offset().left;
+
+                                var $to_x = $('#show_count').offset().top;
+                                var $to_y = $('#show_count').offset().left;
+
+                                $(".add_jump").css({'left': $add_y + 80, 'top': $add_x + 10, 'display': 'block'});
+                                $(".add_jump").stop().animate({
+                                        'left': $to_y + 7,
+                                        'top': $to_x + 7
+                                    },
+                                    "fast", function () {
+                                        $(".add_jump").fadeOut('fast', function () {
+                                            $.get('/cart/count/', function (data) {
+                                                $('#show_count').html(data.count);
+                                            });
+
+                                        });
+
+                                    });
+                            }
+                            else {
+                                alert('添加失败')
+                            }
+                        });
+
+
+                    }
+                    else {
+                        location.href = '/login/'
+                    }
+                });
+
+            });
+
+            $('.num_show').keyup(function () {
+                num1 = $('.num_show').val();
+                num = parseInt($('.num_show').val());
+                kucun = parseInt($('#kucun').val());
+                price = parseFloat($('.show_pirze em').text());
+
+                if (num < 1) {
+                    num = 1;
+                    $('.num_show').val(num)
+
+                }
+                if (num > kucun) {
+                    num = kucun;
+                    $('.num_show').val(num)
+                }
+                if (isNaN(num1) == true) {
+                    num = 1;
+                    $('.num_show').val(num)
+
+                }
+                total = num * price;
+                if (num1 == '') {
+                    $('.total em').text('0元');
+
+                }
+                else {
+                    $('.total em').text(total.toFixed(2) + '元');
+
+                }
+
+            });
+
+            $('.add').click(function () {
+                num = parseInt($('.num_show').val());
+                num++;
+                $('.num_show').val(num).keyup();
+            });
+            $('.minus').click(function () {
+                num = parseInt($('.num_show').val());
+                num--;
+                $('.num_show').val(num).keyup();
+            });
+
+            $('.detail_tab li').each(function () {
+                $(this).click(function () {
+                    $(this).addClass('active').siblings().removeClass('active');
+                    if ($(this).html() == '商品介绍') {
+                        $('#goods').addClass('active').siblings().removeClass('active');
+                    }
+                    else {
+                        $('#ping').addClass('active').siblings().removeClass('active');
+                    }
+
+
+                });
+            });
+            var check = false;
+
+            $('#pinglun').blur(function () {
+                $.get('/islogin/', function (data) {
+                    if (data.islogin) {
+                        if ($('#pinglun').val().length > 21) {
+                            check = true;
+                        }
+                        else {
+                            alert('请输入内容');
+                            check = false;
+
+                        }
+                    }
+                    else {
+                        location.href = '/login/';
+                    }
+                });
+            });
+            $('#comment_form').submit(function () {
+                alert($('#pinglun').val().length);
+                $('#pinglun').blur();
+                return check;
+            });
+
+            $('.prise').each(function () {
+                var click_log = false;
+                $(this).click(function () {
+                    var thumb_up = $(this);
+                    if (click_log == true) {
+                        alert('您已经点过赞');
+                    }
+                    else {
+                        commentid = thumb_up.prev().val();
+                        $.get('/goods/thumb_up/', {'comid':commentid}, function (data) {
+                            if (data.check) {
+                                zan_num = parseInt(thumb_up.children('.zan').text());
+                                zan_num += 1;
+                                thumb_up.children('.zan').text(zan_num);
+                                thumb_up.children('.laud').css('background', 'url(/static/images/details2.png) no-repeat -84px 0');
+                                click_log = true;
+                            }
+                            else {
+                                alert('点赞失败');
+                            }
+                        });
+
+                    }
+                });
+
+            });
+        });
+
+
+    </script>
+{% endblock jq %}
+
+
+
+
+{% block type %}
+    <div class="breadcrumb">
+        <a href="#">全部分类</a>
+        <span>></span>
+        <a href="/goods/list{{ goods.gtype.id }}_1">{{ goods.gtype.ttitle }}</a>
+        <span>></span>
+        <a href="#">商品详情</a>
+    </div>
+
+
+    <div class="goods_detail_con clearfix">
+        <div class="goods_detail_pic fl"><img src="/static/{{ goods.gpic }}/"></div>
+
+        <div class="goods_detail_list fr">
+            <h3>{{ goods.gtitle }}</h3>
+            <p>{{ goods.gsubtitle }}</p>
+            <div class="prize_bar">
+                <span class="show_pirze">¥<em>{{ goods.gprice }}</em></span>
+                <span class="show_unit">单  位：{{ goods.gunit }}</span>
+            </div>
+            <div class="goods_num clearfix">
+                <div class="num_name fl">数 量：</div>
+                <div class="num_add fl">
+                    <input type="hidden" value="{{ goods.id }}" id="gid">
+                    <input type="text" class="num_show fl" value="1">
+                    <a href="javascript:;" class="add fr">+</a>
+                    <a href="javascript:;" class="minus fr">-</a>
+                </div>
+            </div>
+            <div class="total">总价：<em>{{ goods.gprice }}元</em></div>
+            <input type="hidden" value="{{ goods.grepertory }}" id="kucun">
+            <div class="operate_btn">
+                <a href="javascript:;" class="buy_btn">立即购买</a>
+                <a href="javascript:;" class="add_cart" id="add_cart">加入购物车</a>
+            </div>
+        </div>
+    </div>
+{% endblock type %}
+
+
+{% block right %}
+
+
+    <div class="r_wrap fr clearfix">
+        <ul class="detail_tab clearfix">
+            <li class="active">商品介绍</li>
+            <li>评论</li>
+        </ul>
+
+        <div class="tab_content active" id="goods">
+            <dl>
+                <dt>商品详情：</dt>
+                {{ goods.gdetails|safe }}
+
+            </dl>
+        </div>
+        <div class="tab_content" id="ping">
+            <dl>
+                <dt>评论详情：</dt>
+                <ul class="pul">
+                    {% for comment in comment_list %}
+                        <li class="pli">
+                            <div class="user">
+                                <span class="fl">{{ comment.com_user.user_name }}</span>
+                                <span class="fr">{{ comment.com_date }}</span>
+
+                            </div>
+                            <div class="comment">
+                                {{ comment.com_content }}
+                            </div>
+                            <div class="review_prise">
+                                <input type="hidden" value="{{ comment.id }}">
+                                <span class="prise"><b class="laud"></b>赞(<span class="zan">{{ comment.com_zan }}</span>)</span>
+                                <span class="reply">回复  </span>
+                            </div>
+                        </li>
+                    {% endfor %}
+                </ul>
+
+                <form action="/goods/comment/" class="ping_form" id="comment_form" method="post">
+                    {% csrf_token %}
+                    <span class="title">写评论</span>
+                    <input type="hidden" name="gdsid" value="{{ gds_id }}">
+
+                    <textarea class="ping" name="content" id="pinglun">
+
+                    </textarea>
+                    <input type="submit" value="提交" class="sub">
+
+                </form>
+
+            </dl>
+        </div>
+
+    </div>
+
+
+
+
+
+{% endblock right %}
+{% block jump %}
+    <div class="add_jump"></div>
+{% endblock jump %}

@@ -1,0 +1,70 @@
+{% extends 'basegoods.html' %}
+{% block new_goods %}
+{% endblock new_goods %}
+
+{% block right %}
+    <ul class="goods_type_list clearfix  active">
+        {% for foo in page_obj %}
+
+            <li>
+                <a href="/goods/{{ foo.object.id }}"><img src="/static/{{ foo.object.gpic }}"></a>
+                <h4><a href="#">{{ foo.object.gtitle }}</a></h4>
+                <div class="operate">
+                    <span class="prize">￥{{ foo.object.gprice }}</span>
+                    <span class="unit">{{ foo.object.gprice }}/{{ foo.object.gunit }}</span>
+                    <a href="#" class="add_goods" title="加入购物车"></a>
+                </div>
+            </li>
+        {% endfor %}
+
+
+    </ul>
+    <div class="pagenation ">
+
+        {% if page_obj.has_previous %}
+            <a href="?q={{ query }}&page=1">首页</a>
+
+            <a href="?q={{ query }}&page={{ page_obj.number|add:-1 }}">
+                <上一页
+            </a>
+        {% endif %}
+        {% for pindex in page_range %}
+            {% if page_obj.number == pindex %}
+                <a href="?q={{ query }}&page={{ pindex }}" class="active">{{ pindex }}</a>
+            {% else %}
+                <a href="?q={{ query }}&page={{ pindex }}">{{ pindex }}</a>
+
+            {% endif %}
+        {% endfor %}
+
+
+        {% if page.has_next %}
+            <a href="?q={{ query }}&page={{ page.number|add:1 }}">
+                下一页>
+            </a>
+            <a href="?q={{ query }}&page={{ page.paginator.num_pages }}">尾页</a>
+
+        {% endif %}
+
+    </div>
+
+
+{% endblock right %}
+{##}
+{#<h1>搜索&nbsp;<b>{{ query }}</b>&nbsp;结果如下：</h1>#}
+{#<ul>#}
+{#    {% for item in page %}#}
+{#        <li>{{ item.object.id }}--{{ item.object.gdetails|safe }}</li>#}
+{#    {% empty %}#}
+{#        <li>啥也没找到</li>#}
+{#    {% endfor %}#}
+{#</ul>#}
+{#<hr>#}
+{#{% for pindex in page.paginator.page_range %}#}
+{#    {% if pindex == page.number %}#}
+{#        {{ pindex }}&nbsp;&nbsp;#}
+{#    {% else %}#}
+{#        <a href="?q={{ query }}&amp;page={{ pindex }}">{{ pindex }}</a>&nbsp;&nbsp;#}
+{#    {% endif %}#}
+{#{% endfor %}#}
+

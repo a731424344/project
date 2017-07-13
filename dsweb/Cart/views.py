@@ -1,0 +1,42 @@
+# -*- coding:utf-8 -*-
+from django.shortcuts import render, redirect
+from django.http import JsonResponse, HttpResponse
+from models import *
+from django.db.models import Sum
+from users.decorator import *
+
+def add(request):
+    try:
+        goodsid = int(request.GET.get('goodsid'))
+        userid = request.session.get('uid')
+        count = int(request.GET.get('count', '1'))
+
+        carts = CartInfo.objects.filter(user_id = userid, goods_id = goodsid)
+        if len(carts) >=1:
+            cart = carts[0]
+            cart.count += count
+            cart.save()
+        else:
+
+            cart = CartInfo()
+            cart.user_id = userid
+            cart.goods_id = goodsid
+            cart.count = count
+            cart.save()
+        return JsonResponse({'is_add': '1'})
+    except:
+        return JsonResponse({'is_add': '0'})
+
+def count(request):
+    uid = request.session.get('uid')
+    # count = CartInfo.objects.filter(user_id=uid).count()
+    count = CartInfo.objects.aggregate(Sum('count')).get('count__sum')
+
+    return JsonResponse({'count':count})
+@login_yz
+def index(request):
+    uid = request.session.get('uid')
+    cart_list = CartInfo.objects.filter(user_id = uid,)
+    context = {'title':'购物车','cart_list':cart_list}
+    return render(request,'Cart/cart.html',context)
+

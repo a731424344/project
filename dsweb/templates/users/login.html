@@ -55,11 +55,20 @@
 
         }
     });
+
     $('#reg_form').submit(function () {
         $('.name_input').blur();
         $('.pass_input').blur();
         return name_ok && pwd_ok;
     });
+
+{#    var uname = $.cookie('uname');#}
+{#    if(uname == undefined){#}
+{#        $('.yzm').val('wucookie')#}
+{#    }#}
+{#    else {#}
+{#        $('.yzm').val(uname)#}
+{#    }#}
     if ('{{yzm_error}}' == '1') {
         $('.user_error').html('验证码错误').show();
         yzm_error = '0'
@@ -71,6 +80,9 @@
         name_error = '0'
 
     }
+
+
+
 
 });
     </script>
@@ -106,7 +118,7 @@
                             <a href="/change_pwd/">忘记密码</a>
                         </div>
                         <div class="yzm_div">
-                            <input type="text" class="yzm" name="yzm">
+                            <input type="text" class="yzm" name="yzm" value="">
                             <img src="/verify/?1" alt="" class="yam_img" id="yzm_img">
                             <span class="change_yzm" id="change">看不清换一个</span>
                         </div>

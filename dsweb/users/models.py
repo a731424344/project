@@ -10,3 +10,5 @@ class userinfo(models.Model):
     user_addr = models.CharField(default='', max_length=100)
     post_code = models.CharField(default='', max_length=6)
 
+
+

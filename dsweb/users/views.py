@@ -1,13 +1,14 @@
 # -*- coding:utf-8 -*-
-from django.shortcuts import render, redirect
+from django.shortcuts import render,redirect
 from django.http import HttpResponse, JsonResponse
 from PIL import Image, ImageDraw, ImageFont
+import math,string
 from models import *
 from redis import StrictRedis
 from hashlib import sha1
 import datetime
-
-
+from decorator import *
+from Goods.models import *
 def register(request):
     return render(request, 'users/register.html', {'title': '注册', 'top': '0'})
 
@@ -19,6 +20,7 @@ def login(request):
 
 
 def verify_code(request):
+
     # 引入随机函数模块
     import random
     # 定义变量，用于画面的背景色、宽、高
@@ -36,13 +38,34 @@ def verify_code(request):
         fill = (random.randrange(0, 255), 255, random.randrange(0, 255))
         draw.point(xy, fill=fill)
     # 定义验证码的备选值
-    str1 = 'ABCD123EFGHIJK456LMNOPQRS789TUVWXYZ0'
+    # str1 = 'ABCD123EFGHIJK456LMNOPQRS789TUVWXYZ0'
     # 随机选取4个值作为验证码
+
+    # val = random.randint(0x4E00, 0x9FBF)
+    # str1 = unichr(val)
+    # head = random.randint(0xB0, 0xCF)
+    # body = random.randint(0xA, 0xF)
+    # tail = random.randint(0, 0xF)
+    # val = (head << 8) | (body << 4) | tail
+    # str1 = "%x" % val
+    # val = random.randint(0xB0A0, 0xD0D0)
+    # str1 = "%x"%val
     rand_str = ''
-    for i in range(0, 4):
-        rand_str += str1[random.randrange(0, len(str1))]
+    for i in range(0,4):
+        head = random.randint(0xB0, 0xCF)
+        body = random.randint(0xA, 0xF)
+        tail = random.randint(0, 0xF)
+        val = (head << 8) | (body << 4) | tail
+        str1 = "%x" % val
+        rand_str += str1.decode('hex').decode('gb2312')
+
+
+    # for i in range(0, 4):
+    #     rand_str += str1[random.randrange(0, len(str1))]
     # 构造字体对象，ubuntu的字体路径为“/usr/share/fonts/truetype/freefont”
-    font = ImageFont.truetype('FreeMono.ttf', 23)
+    # font = ImageFont.truetype('FreeMono.ttf', 23)
+    font = ImageFont.truetype('simsun.ttf', 16)
+
     # 构造字体颜色
     fontcolor = (255, random.randrange(0, 255), random.randrange(0, 255))
     # 绘制4个字
@@ -73,7 +96,6 @@ def info_handle(request):
     s1 = sha1()
     s1.update(user_pwd)
     upwd = s1.hexdigest()
-
     user_info = userinfo()
     user_info.user_name = user_name
     user_info.user_pwd = upwd
@@ -93,7 +115,7 @@ def login_handle(request):
     post = request.POST
     log_name = post.get('user_name')
     login_pwd = post.get('user_pwd')
-    log_yzm = post.get('yzm')
+    log_yzm = post.get('yzm').upper()
     yzm = request.session['verifycode']
     log_rember = post.get('rember')
     # rember = post.get('rember')
@@ -116,7 +138,10 @@ def login_handle(request):
                 if user_name[0].user_pwd == log_pwd:
                     sr.set(log_name, log_pwd)
                     request.session['uid'] = user_name[0].id
-                    response = redirect('/center/')
+                    request.session['uname'] = log_name
+                    request.session.set_expiry(0)
+                    url = request.session.get('url_path','/goods/')
+                    response = redirect(url)
                     if log_rember == '1':
 
                         response.set_cookie('uname', log_name,
@@ -131,7 +156,11 @@ def login_handle(request):
         else:
             if log_pwd == redis_pwd:
                 request.session['uid'] = user_name[0].id
-                response = redirect('/center/')
+                request.session['uname'] = log_name
+                request.session.set_expiry(0)
+                #logout会清除session；
+                url = request.session.get('url_path','/goods/')
+                response = redirect(url)
                 if log_rember == '1':
 
                     response.set_cookie('uname', log_name, expires=datetime.datetime.now() + datetime.timedelta(days=7))
@@ -177,18 +206,67 @@ def newpwd_handle(request):
             context['email_error'] = '1'
             return render(request, 'users/change_pwd.html', context)
 
-
+@login_yz
 def center(request):
-    user = userinfo.objects.get(pk=request.session['uid'])
-    context = {'title': '用户中心', 'user': user}
-    return render(request, 'users/user_center_info.html', context)
+    try:
+        user = userinfo.objects.get(pk=request.session['uid'])
+        reviews_id = request.COOKIES.get('review_id')
+        reviews_id = reviews_id.rstrip(',').split(',')
+        # print reviews_id
+        gdslist = []
+        for goods in reviews_id:
+            gdslist.append(GoodsInfo.objects.get(id=goods))
+        context = {'title': '用户中心', 'user': user,'review_list':gdslist}
+        return render(request, 'users/user_center_info.html', context)
+    except:
+        return render(request, 'users/user_center_info.html')
 
 
+@login_yz
 def order(request):
     context = {'title': '用户订单'}
     return render(request, 'users/user_center_order.html', context)
 
 
-def site(request):
-    context = {'title': '用户订单'}
-    return render(request, 'users/user_center_site.html', context)
+@login_yz
+def siteinfo(request):
+    user = userinfo.objects.get(pk = request.session['uid'])
+    print user
+    if request.method == 'POST':
+        post = request.POST
+        user.post_code = post.get('postcode')
+        user.recv_name= post.get('recv_name')
+        user.user_phone = post.get('recvphone')
+        user.user_addr = post.get('detail_addr')
+        user.save()
+    context = {'user': user}
+    return render(request,'users/user_center_site.html',context)
+
+def logout(request):
+    request.session.flush()
+    return redirect('/login/')
+
+
+def islogin(request):
+    is_login = 0
+    if request.session.get('uid'):
+         is_login = 1
+    return JsonResponse({'islogin':is_login})
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
