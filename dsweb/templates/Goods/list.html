@@ -62,8 +62,13 @@
             $.get('/islogin/', function (data) {
                 if (data.islogin) {
                     $.get('/cart/add/', {'goodsid': gdsid}, function (data) {
-                        if(data.is_add == '1'){
-                            alert('添加成功')
+                        if (data.is_add == '1') {
+                            $.get('/cart/count/', function (data) {
+                                $('#show_count').html(data.count);
+                                alert('添加成功')
+                            });
+
+
                         }
                         else {
                             alert('添加失败')
@@ -235,7 +240,7 @@
 
 
     </div>
-
+    <div class="add_jump"></div>
 {% endblock right %}
 
 

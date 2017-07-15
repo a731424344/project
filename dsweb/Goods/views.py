@@ -6,7 +6,8 @@ from django.core.paginator import Paginator
 from django.http import HttpRequest
 from haystack.generic_views import SearchView
 from datetime import datetime
-
+import json
+from django.core import serializers
 
 def index(request):
     # 查询产品的类型,最火的4个，最新的3个
@@ -142,6 +143,25 @@ def thumb_up(request):
         return JsonResponse({'check': 1})
     except:
         return JsonResponse({'check': 0})
+
+def test(request):
+    type = TypeInfo.objects.get(pk=1)
+    goods = type.goodsinfo_set.order_by('-id')
+    p = Paginator(goods, 3)
+    page = p.page(1)
+    data = serializers.serialize("json",page)
+    # pagel = page.object_list
+    # o = []
+    # for x in page:
+    #     o.append(x)
+    # s = serializers.serialize("json",o)
+    # print s
+    # g = serializers.serialize("json",goods)
+    # print g
+    return HttpResponse(data,content_type="application/json")
+
+def testye(request):
+    return render(request,'Goods/test.html')
 
 
 

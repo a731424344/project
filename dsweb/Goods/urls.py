@@ -8,5 +8,7 @@ urlpatterns = [
     url(r'^search/$',views.MySearchView.as_view(),name='search_view'),
     url(r'^comment/',views.comment),
     url(r'^thumb_up/',views.thumb_up),
+    url(r'^test/$',views.test),
+    url(r'^testye/$',views.testye)
 
 ]

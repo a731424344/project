@@ -1,14 +1,18 @@
 # -*- coding:utf-8 -*-
-from django.shortcuts import render,redirect
+from django.shortcuts import render, redirect
 from django.http import HttpResponse, JsonResponse
 from PIL import Image, ImageDraw, ImageFont
-import math,string
+import math, string
 from models import *
 from redis import StrictRedis
 from hashlib import sha1
 import datetime
 from decorator import *
 from Goods.models import *
+from Order.models import *
+from django.core.paginator import Paginator
+
+
 def register(request):
     return render(request, 'users/register.html', {'title': '注册', 'top': '0'})
 
@@ -20,7 +24,6 @@ def login(request):
 
 
 def verify_code(request):
-
     # 引入随机函数模块
     import random
     # 定义变量，用于画面的背景色、宽、高
@@ -51,14 +54,13 @@ def verify_code(request):
     # val = random.randint(0xB0A0, 0xD0D0)
     # str1 = "%x"%val
     rand_str = ''
-    for i in range(0,4):
+    for i in range(0, 4):
         head = random.randint(0xB0, 0xCF)
         body = random.randint(0xA, 0xF)
         tail = random.randint(0, 0xF)
         val = (head << 8) | (body << 4) | tail
         str1 = "%x" % val
         rand_str += str1.decode('hex').decode('gb2312')
-
 
     # for i in range(0, 4):
     #     rand_str += str1[random.randrange(0, len(str1))]
@@ -140,7 +142,7 @@ def login_handle(request):
                     request.session['uid'] = user_name[0].id
                     request.session['uname'] = log_name
                     request.session.set_expiry(0)
-                    url = request.session.get('url_path','/goods/')
+                    url = request.session.get('url_path', '/goods/')
                     response = redirect(url)
                     if log_rember == '1':
 
@@ -158,8 +160,8 @@ def login_handle(request):
                 request.session['uid'] = user_name[0].id
                 request.session['uname'] = log_name
                 request.session.set_expiry(0)
-                #logout会清除session；
-                url = request.session.get('url_path','/goods/')
+                # logout会清除session；
+                url = request.session.get('url_path', '/goods/')
                 response = redirect(url)
                 if log_rember == '1':
 
@@ -206,6 +208,7 @@ def newpwd_handle(request):
             context['email_error'] = '1'
             return render(request, 'users/change_pwd.html', context)
 
+
 @login_yz
 def center(request):
     try:
@@ -216,7 +219,7 @@ def center(request):
         gdslist = []
         for goods in reviews_id:
             gdslist.append(GoodsInfo.objects.get(id=goods))
-        context = {'title': '用户中心', 'user': user,'review_list':gdslist}
+        context = {'title': '用户中心', 'user': user, 'review_list': gdslist}
         return render(request, 'users/user_center_info.html', context)
     except:
         return render(request, 'users/user_center_info.html')
@@ -224,23 +227,38 @@ def center(request):
 
 @login_yz
 def order(request):
-    context = {'title': '用户订单'}
+    uid = int(request.session.get('uid'))
+    orders = OrderMain.objects.filter(user_id=uid)
+    pg = int(request.GET.get('pg','1'))
+    paginator = Paginator(orders, 2)
+    page = paginator.page(pg)
+    pagelist = []
+    if paginator.num_pages < 5:
+        pagelist = paginator.page_range
+    elif page.number <= 2:
+        pagelist = range(1, 6)
+    elif page.number >= paginator.num_pages - 1:
+        pagelist = range(paginator.num_pages - 4, paginator.num_pages + 1)
+    else:
+        pagelist = range(pg - 2, pg + 3)
+
+    context = {'title': '用户订单', 'page': page,'pagelist':pagelist}
     return render(request, 'users/user_center_order.html', context)
 
 
 @login_yz
 def siteinfo(request):
-    user = userinfo.objects.get(pk = request.session['uid'])
-    print user
+    user = userinfo.objects.get(pk=request.session['uid'])
     if request.method == 'POST':
         post = request.POST
         user.post_code = post.get('postcode')
-        user.recv_name= post.get('recv_name')
+        user.recv_name = post.get('recv_name')
         user.user_phone = post.get('recvphone')
         user.user_addr = post.get('detail_addr')
         user.save()
     context = {'user': user}
-    return render(request,'users/user_center_site.html',context)
+    return render(request, 'users/user_center_site.html', context)
+
 
 def logout(request):
     request.session.flush()
@@ -250,23 +268,5 @@ def logout(request):
 def islogin(request):
     is_login = 0
     if request.session.get('uid'):
-         is_login = 1
-    return JsonResponse({'islogin':is_login})
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        is_login = 1
+    return JsonResponse({'islogin': is_login})

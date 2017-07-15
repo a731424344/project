@@ -1512,7 +1512,10 @@ html, body {
     float: right;
 }
 
-.settlements .col04 a {
+.settlements .col04 input {
+    width:100%;
+    outline: none;
+    border:none;
     display: block;
     height: 78px;
     background-color: #ff3d3d;
@@ -1707,7 +1710,8 @@ html, body {
     margin: 20px auto;
 }
 
-.order_submit a {
+.order_submit input {
+    border: none;
     width: 160px;
     height: 40px;
     line-height: 40px;

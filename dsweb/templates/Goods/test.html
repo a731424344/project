@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="/static/js/jquery-1.12.4.min.js"></script>
+    <script>
+        $(function () {
+            $.get('/goods/test/', function (data) {
+                s = $.parseJSON(data.page)
+                $('#con').html(s.gprice)
+
+            });
+        });
+
+
+    </script>
+</head>
+<body>
+<div id="con">
+
+</div>
+</body>
+</html>
